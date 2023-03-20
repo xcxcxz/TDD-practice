@@ -11,6 +11,9 @@ import com.zzo.membership.service.MembershipService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -21,6 +24,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.nio.charset.StandardCharsets;
+import java.util.stream.Stream;
 
 import static com.zzo.membership.constr.MembershipConstant.USER_ID_HEADER;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -127,6 +131,35 @@ public class MembershipControllerTest {
         //then
         resultActions.andExpect(status().isBadRequest());
     }
+
+    // 위 3개의 테스트는 동일한 검증하고, 파라미터만 다른 테스트이다.
+    // 아래와 같이 리팩토링 할 수있다.
+    @ParameterizedTest
+    @MethodSource("invalidMembershipAddParameter")
+    void wrongParamTest(final Integer point, final MembershipType membershipType) throws Exception {
+        //given
+        final String url = "/api/v1/memberships";
+
+        //when
+        final ResultActions resultActions = mockMvc.perform(
+                MockMvcRequestBuilders.post(url)
+                        .header(USER_ID_HEADER, "12345")
+                        .content(gson.toJson(membershipRequest(point, membershipType)))
+                        .contentType(MediaType.APPLICATION_JSON)
+        );
+
+        //then
+        resultActions.andExpect(status().isBadRequest());
+    }
+
+    private static Stream<Arguments> invalidMembershipAddParameter(){
+       return Stream.of(
+               Arguments.of(null, MembershipType.NAVER),
+               Arguments.of(-1, MembershipType.NAVER),
+               Arguments.of(10000, null)
+       );
+    }
+
 
     @Test
     void errorThrowFromService() throws Exception {
