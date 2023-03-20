@@ -6,6 +6,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.lang.reflect.Member;
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 
@@ -57,6 +60,43 @@ class MembershipRepositoryTest {
         assertThat(findResult.getUserId()).isEqualTo("userId");
         assertThat(findResult.getMembershipType()).isEqualTo(MembershipType.NAVER);
         assertThat(findResult.getPoint()).isEqualTo(10000);
+    }
+
+    @Test
+    void membershipSizeZero(){
+        //given
+
+
+        //when
+        List<Membership> result = membershipRepository.findAllByUserId("userId");
+
+        //then
+        assertThat(result.size()).isEqualTo(0);
+    }
+
+    @Test
+    void membershipSizeTwo(){
+        //given
+        final Membership naverMembership = Membership.builder()
+                .userId("userId")
+                .membershipType(MembershipType.NAVER)
+                .point(10000)
+                .build();
+
+        final Membership kakaoMembership = Membership.builder()
+                .userId("userId")
+                .membershipType(MembershipType.KAKAO)
+                .point(10000)
+                .build();
+
+        membershipRepository.save(naverMembership);
+        membershipRepository.save(kakaoMembership);
+        //when
+
+        List<Membership> result = membershipRepository.findAllByUserId("userId");
+
+        //then
+        assertThat(result.size()).isEqualTo(2);
     }
 
 }
