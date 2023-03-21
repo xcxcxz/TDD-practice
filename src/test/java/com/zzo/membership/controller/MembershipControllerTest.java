@@ -4,8 +4,9 @@ import com.google.gson.Gson;
 import com.zzo.membership.constr.MembershipErrorResult;
 import com.zzo.membership.constr.MembershipException;
 import com.zzo.membership.constr.MembershipType;
-import com.zzo.membership.dao.MembershipDao;
-import com.zzo.membership.dto.MembershipDto;
+import com.zzo.membership.dto.MembershipAddResponse;
+import com.zzo.membership.dao.MembershipRequest;
+import com.zzo.membership.dto.MembershipDetailResponse;
 import com.zzo.membership.global.GlobalExceptionHandler;
 import com.zzo.membership.service.MembershipService;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +25,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.stream.Stream;
 
 import static com.zzo.membership.constr.MembershipConstant.USER_ID_HEADER;
@@ -71,8 +73,8 @@ public class MembershipControllerTest {
         resultActions.andExpect(status().isBadRequest());
     }
 
-    private MembershipDto membershipRequest(final Integer point, final MembershipType membershipType){
-       return MembershipDto.builder()
+    private MembershipRequest membershipRequest(final Integer point, final MembershipType membershipType){
+       return MembershipRequest.builder()
                .point(point)
                .membershipType(membershipType)
                .build();
@@ -185,12 +187,12 @@ public class MembershipControllerTest {
     void membershipRegistSucc() throws Exception {
         //given
         final String url = "/api/v1/memberships";
-        final MembershipDao membershipDao = MembershipDao.builder()
+        final MembershipAddResponse membershipAddResponse = MembershipAddResponse.builder()
                 .id(-1L)
                 .membershipType(MembershipType.NAVER)
                 .build();
 
-        doReturn(membershipDao).when(membershipService).addMembership("12345", MembershipType.NAVER, 10000);
+        doReturn(membershipAddResponse).when(membershipService).addMembership("12345", MembershipType.NAVER, 10000);
         //when
         final ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.post(url)
@@ -202,9 +204,91 @@ public class MembershipControllerTest {
         //then
         resultActions.andExpect(status().isCreated());
 
-        final MembershipDao response = gson.fromJson(resultActions.andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8), MembershipDao.class);
+        final MembershipAddResponse response = gson.fromJson(resultActions.andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8), MembershipAddResponse.class);
 
         assertThat(response.getMembershipType()).isEqualTo(MembershipType.NAVER);
         assertThat(response.getId()).isNotNull();
+    }
+
+    @Test
+    void getMembershipsFailNoId() throws Exception {
+        //given
+        final String url = "/api/v1/memberships";
+
+        //when
+        final ResultActions resultActions = mockMvc.perform(
+                MockMvcRequestBuilders.get(url)
+        );
+
+        //then
+        resultActions.andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getMembershipsSucc() throws Exception {
+        //given
+        final String url = "/api/v1/memberships";
+        doReturn(Arrays.asList(
+                MembershipDetailResponse.builder().build(),
+                MembershipDetailResponse.builder().build(),
+                MembershipDetailResponse.builder().build()
+        )).when(membershipService).getMembershipList("12345");
+
+        //when
+        final ResultActions resultActions = mockMvc.perform(
+                MockMvcRequestBuilders.get(url)
+                        .header(USER_ID_HEADER, "12345")
+        );
+
+        //then
+        resultActions.andExpect(status().isOk());
+    }
+
+    @Test
+    void getMembershipDetailFailNoUserId() throws Exception {
+        //given
+        final String url = "/api/v1/memberships";
+
+        //when
+        final ResultActions resultActions = mockMvc.perform(
+                MockMvcRequestBuilders.get(url)
+        );
+
+        //then
+        resultActions.andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getMembershipDetailFailNoMembership() throws Exception {
+        //given
+        final String url = "/api/v1/memberships/-1";
+        doThrow(new MembershipException(MembershipErrorResult.MEMBERSHIP_NOT_FOUND))
+                .when(membershipService)
+                .getMembership(-1L, "12345");
+        //when
+        final ResultActions resultActions = mockMvc.perform(
+                MockMvcRequestBuilders.get(url)
+                        .header(USER_ID_HEADER, "12345")
+        );
+
+        //then
+        resultActions.andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getMembershipDetailSucc() throws Exception {
+        //given
+        final String url = "/api/v1/memberships/-1";
+        doReturn(MembershipDetailResponse.builder().build()).when(membershipService).getMembership(-1L, "12345");
+
+        //when
+        final ResultActions resultActions = mockMvc.perform(
+                MockMvcRequestBuilders.get(url)
+                        .header(USER_ID_HEADER, "12345")
+                        .param("membershipType", MembershipType.NAVER.name())
+        );
+
+        //then
+        resultActions.andExpect(status().isOk());
     }
 }

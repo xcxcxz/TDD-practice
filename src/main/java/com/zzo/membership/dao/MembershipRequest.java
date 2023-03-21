@@ -1,4 +1,4 @@
-package com.zzo.membership.dto;
+package com.zzo.membership.dao;
 
 import com.zzo.membership.constr.MembershipType;
 import jakarta.validation.constraints.Min;
@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 @Builder
 @RequiredArgsConstructor
 @NoArgsConstructor(force = true)
-public class MembershipDto {
+public class MembershipRequest {
         @NotNull
         @Min(0)
         private final Integer point;
