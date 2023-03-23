@@ -99,4 +99,20 @@ class MembershipRepositoryTest {
         assertThat(result.size()).isEqualTo(2);
     }
 
+    @Test
+    void deleteMembership(){
+        //given
+        final Membership naverMembership = Membership.builder()
+                .userId("userId")
+                .membershipType(MembershipType.NAVER)
+                .point(10000)
+                .build();
+
+        final Membership savedMembership = membershipRepository.save(naverMembership);
+        //when
+    membershipRepository.deleteById(savedMembership.getId());
+
+        //then
+    }
+
 }

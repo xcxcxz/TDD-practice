@@ -25,7 +25,9 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static com.zzo.membership.constr.MembershipConstant.USER_ID_HEADER;
@@ -290,5 +292,34 @@ public class MembershipControllerTest {
 
         //then
         resultActions.andExpect(status().isOk());
+    }
+
+    @Test
+    void deleteMembershipFail_userIdNoHeader() throws Exception {
+        //given
+        final String url = "/api/v1/memberships/-1";
+
+        //when
+        final ResultActions resultActions = mockMvc.perform(
+                MockMvcRequestBuilders.delete(url)
+        );
+
+        //then
+        resultActions.andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void deleteMembershipSucc() throws Exception {
+        //given
+        final String url = "/api/v1/memberships/-1";
+
+        //when
+        final ResultActions resultActions = mockMvc.perform(
+                MockMvcRequestBuilders.delete(url)
+                        .header(USER_ID_HEADER, "12345")
+        );
+
+        //then
+        resultActions.andExpect(status().isNoContent());
     }
 }

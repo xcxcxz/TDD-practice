@@ -128,5 +128,39 @@ public class MembershipServiceTest {
         assertThat(result.getPoint()).isEqualTo(point);
     }
 
+    @Test
+    void deleteMembershipFailNoInfo(){
+        //given
+        doReturn(Optional.empty()).when(membershipRepository).findById(membershipId);
 
+        //when
+        final MembershipException result = assertThrows(MembershipException.class, () -> target.removeMembership(membershipId, userId));
+
+        //then
+        assertThat(result.getErrorResult()).isEqualTo(MembershipErrorResult.MEMBERSHIP_NOT_FOUND);
+    }
+
+    @Test
+    void deleteMembershipFailIncorrectInfo(){
+        //given
+        final Membership membership = membership();
+        doReturn(Optional.of(membership)).when(membershipRepository).findById(membershipId);
+
+        //when
+        final MembershipException result = assertThrows(MembershipException.class, () -> target.removeMembership(membershipId, userId));
+
+        //then
+        assertThat(result.getErrorResult()).isEqualTo(MembershipErrorResult.MEMBERSHIP_NOT_OWNER);
+    }
+
+    @Test
+    void deleteMembershipSucc(){
+        //given
+        final Membership membership = membership();
+        doReturn(Optional.of(membership)).when(membershipRepository).findById(membershipId);
+        //when
+        target.removeMembership(membershipId, userId);
+
+        //then
+    }
 }
